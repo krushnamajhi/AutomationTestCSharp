@@ -68,7 +68,7 @@ namespace AutomationTest.reporting
                     {
                         TestPackage.ExtentTest.Log(Status.Warning, this.ToString());
                     }
-                    LoggerConfig.Logger.Here().Information(this.ToString());
+                    LoggerConfig.Logger.Here().Error(this.ToString());
                 }
                 else
                 {

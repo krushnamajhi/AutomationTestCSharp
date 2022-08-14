@@ -6,6 +6,7 @@ using OpenQA.Selenium;
 using OpenQA.Selenium.Chrome;
 using OpenQA.Selenium.Edge;
 using OpenQA.Selenium.Firefox;
+using OpenQA.Selenium.Support.UI;
 using Serilog;
 using System;
 using System.Collections.Generic;
@@ -19,7 +20,8 @@ namespace AutomationTest.uiautomation
     public class WebDriver
     {
         public IWebDriver SeleniumDriver;
-        private ExtentTest ExtentTest;
+        private WebDriverWait Wait;
+        private readonly ExtentTest ExtentTest;
         public IJavaScriptExecutor JSRunner => SeleniumDriver as IJavaScriptExecutor;
         public String Title => SeleniumDriver.Title;
         protected ILogger logger = LoggerConfig.Logger;
@@ -111,9 +113,9 @@ namespace AutomationTest.uiautomation
 
         public void Quit()
         {
-            logger.Here().Information("Quiting Driver");
             if(SeleniumDriver != null)
             {
+                logger.Here().Information("Quiting Driver");
                 SeleniumDriver.Quit();
             }
         }
@@ -152,6 +154,33 @@ namespace AutomationTest.uiautomation
         {
             JSRunner.ExecuteScript("arguments[0].click();", webElement.webElement);
             logger.Here().Information($"Click Element '{webElement.locator.Xpath}' using JavaScript");
+        }
+
+        public void WaitForPageLoad(int timeOut = 60)
+        {
+            Wait = new WebDriverWait(SeleniumDriver, new TimeSpan(0, 0, timeOut));
+            Wait.Until((d) =>
+            {
+                try
+                {
+                    return ExecuteJavaScript("return document.readyState").Equals("complete");
+                }
+                catch (InvalidOperationException e)
+                {
+                    //Window is no longer available
+                    return e.Message.ToLower().Contains("unable to Driver browser");
+                }
+                catch (WebDriverException e)
+                {
+                    //Browser is no longer available
+                    return e.Message.ToLower().Contains("unable to connect");
+                }
+                catch (Exception)
+                {
+                    return false;
+                }
+            });
+
         }
 
     }

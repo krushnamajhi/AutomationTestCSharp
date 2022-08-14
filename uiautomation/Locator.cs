@@ -37,6 +37,15 @@ namespace AutomationTest.uiautomation
         public static Locator PartialLinkText(String locator)
         {
             return new Locator() { By = By.PartialLinkText(locator), Xpath = $"//*[contains(text(),\"{locator}\")]" };
+        } 
+        public static Locator ClassName(String locator)
+        {
+            return new Locator() { By = By.ClassName(locator), Xpath = $"//*[@class=\"{locator}\"]" };
+        }
+        
+        public static Locator Text(String locator)
+        {
+            return new Locator() { By = By.XPath($"//*[text()=\"{locator}\"]"), Xpath = $"//*[text()=\"{locator}\"]" };
         }
     }
 }

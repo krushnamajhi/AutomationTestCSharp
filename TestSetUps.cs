@@ -1,4 +1,5 @@
-﻿using AutomationTest.commonutils;
+﻿using AutomationTest;
+using AutomationTest.commonutils;
 using AutomationTest.reporting;
 using AutomationTest.reporting.serilog;
 using AventStack.ExtentReports;
@@ -16,10 +17,6 @@ namespace AutomationTest
 {
     public class TestSetUps
     {
-        protected ILogger logger = LoggerConfig.Logger;
-        protected TestPackage TestPackage => TestPackages[TestContext.CurrentContext.Test.ID];
-        protected Dictionary<string, TestPackage> TestPackages = new Dictionary<string, TestPackage>();
-
         [OneTimeSetUp]
         public void TestSetup_OneTimeSetUp()
         {

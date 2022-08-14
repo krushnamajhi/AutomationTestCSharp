@@ -14,16 +14,14 @@ using System.Threading.Tasks;
 
 namespace AutomationTest
 {
-    public class TestBase : TestSetUps
+    public class TestBase : Base
     {
-        protected WebDriver Driver => TestPackage.Driver;
-        protected ExtentTest ExtentTest => TestPackage.ExtentTest;
         protected SoftAssertions SoftAssert;
 
         [SetUp]
         public void TestBaseSetUp()
         {
-            TestPackages.Add(TestContext.CurrentContext.Test.ID, new TestPackage());
+            TestPackage = new TestPackage();
             SoftAssert = new SoftAssertions(TestPackage);
         }
 
@@ -31,10 +29,6 @@ namespace AutomationTest
         public void TestTearDown()
         {
             Driver.Quit();
-            if (TestPackages.ContainsKey(TestContext.CurrentContext.Test.ID))
-            {
-                TestPackages.Remove(TestContext.CurrentContext.Test.ID);
-            }
             SoftAssert.AssertAll();
         }
     }

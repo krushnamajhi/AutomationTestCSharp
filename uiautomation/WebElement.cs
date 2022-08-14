@@ -64,7 +64,7 @@ namespace AutomationTest.uiautomation
 
         public String GetAttributeValue(String attribute)
         {
-            logger.Here().Information($"Getting attribute value of '{attribute}'");
+            logger.Here().Information($"Getting attribute value of '{attribute}' of element '{locator.Xpath}'");
             String value = webElement.GetAttribute(attribute);
             logger.Here().Information($"Retreived Attribute value of '{attribute}' of element '{locator.Xpath}' is '{value}'");
             return value;
