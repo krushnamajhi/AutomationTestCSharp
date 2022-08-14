@@ -38,7 +38,7 @@ namespace AutomationTest.uiautomation
         public WebElement FindElement(Locator locator)
         {
             logger.Here().Information("Finding element: " + locator.Xpath);
-            return new WebElement() { webElement = SeleniumDriver.FindElement(locator.By), locator = locator };
+            return new WebElement() { webElement = SeleniumDriver.FindElement(locator.By), locator = locator, executor = JSRunner };
         }
 
         public List<WebElement> FindElements(Locator locator)
@@ -55,7 +55,9 @@ namespace AutomationTest.uiautomation
                     locator = new Locator() 
                     { 
                         By = locator.By, 
-                        Xpath = $"({locator.Xpath})[{count}]" }
+                        Xpath = $"({locator.Xpath})[{count}]", 
+                    },
+                    executor = JSRunner
                 });
                 count++;
             }
@@ -123,7 +125,6 @@ namespace AutomationTest.uiautomation
         public Object ExecuteJavaScript(String script)
         {
             var results = JSRunner.ExecuteScript(script);
-            ExtentTest.Log(Status.Info, $"Executed Javascript: '{script}'");
             logger.Here().Information($"Executed Javascript: '{script}'" );
             return results;
         }
@@ -150,11 +151,7 @@ namespace AutomationTest.uiautomation
             }
         }
 
-        public void ClickJS(WebElement webElement)
-        {
-            JSRunner.ExecuteScript("arguments[0].click();", webElement.webElement);
-            logger.Here().Information($"Click Element '{webElement.locator.Xpath}' using JavaScript");
-        }
+
 
         public void WaitForPageLoad(int timeOut = 60)
         {
@@ -180,8 +177,57 @@ namespace AutomationTest.uiautomation
                     return false;
                 }
             });
-
         }
 
+        public ITargetLocator SwitchTo() => SeleniumDriver.SwitchTo();
+
+        public String CurrentWindowHandle => SeleniumDriver.CurrentWindowHandle;
+        public String PageSource => SeleniumDriver.PageSource;
+
+        public IOptions Manage() => SeleniumDriver.Manage();
+
+        public Navigation Navigate()
+        {
+            return new Navigation(SeleniumDriver.Navigate(), this.Url);
+        }
+        public IReadOnlyCollection<String> WindowHandles => SeleniumDriver.WindowHandles;
+
+        public String Url => SeleniumDriver.Url;
+
+        public void Close()
+        {
+            SeleniumDriver.Close();
+        }
+
+        public class Navigation {
+
+            protected ILogger logger = LoggerConfig.Logger;
+
+            private INavigation navigation;
+            private String Url;
+
+            internal Navigation (INavigation navigation, String Url)
+            {
+                this.navigation = navigation;
+                this.Url = Url;
+            }
+            public void Back()
+            {
+                logger.Here().Information($"Navigating Back from '{Url}'");
+                navigation.Back();   
+            } 
+            public void Forward()
+            {
+                logger.Here().Information($"Navigating Forward from '{Url}'");
+                navigation.Forward();   
+            }
+            
+            public void Reload()
+            {
+                logger.Here().Information($"Reloading page '{Url}'");
+                navigation.Refresh();   
+            }
+
+        }
     }
 }

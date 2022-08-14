@@ -9,6 +9,7 @@ namespace AutomationTest
     internal static class TestProperties
     {
         public static String Browser => "Chrome";
+
         public static String DriverPath => @"D:\SeleniumDrivers";
 
         public static String ReportPath => @"D:\Projects\C#\Automation\AutomationTest\AutomationTest";

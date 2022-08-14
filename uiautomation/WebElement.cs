@@ -15,6 +15,7 @@ namespace AutomationTest.uiautomation
         internal IWebElement webElement;
         internal Locator locator;
         protected ILogger logger = LoggerConfig.Logger;
+        internal IJavaScriptExecutor executor;
 
         internal WebElement()
         {
@@ -62,12 +63,57 @@ namespace AutomationTest.uiautomation
             };
         }
 
-        public String GetAttributeValue(String attribute)
+        public String GetAttribute(String attribute)
         {
-            logger.Here().Information($"Getting attribute value of '{attribute}' of element '{locator.Xpath}'");
             String value = webElement.GetAttribute(attribute);
             logger.Here().Information($"Retreived Attribute value of '{attribute}' of element '{locator.Xpath}' is '{value}'");
             return value;
+        }
+
+        public void Clear()
+        {
+            webElement.Clear();
+            logger.Here().Information($"Cleared input Field '{locator.Xpath}'");
+        }
+
+        public bool Displayed()
+        {
+            bool displayed = webElement.Displayed;
+            logger.Here().Information($"Element '{locator.Xpath}' is Displayed => '{displayed}'");
+            return displayed;
+
+        } 
+        public bool Enabled()
+        {
+            bool enabled = webElement.Enabled;
+            logger.Here().Information($"Element '{locator.Xpath}' is Enabled => '{enabled}'");
+            return enabled;
+        }
+        
+        public bool Selected()
+        {
+            bool selected = webElement.Selected;
+            logger.Here().Information($"Element '{locator.Xpath}' is Selected: '{selected}'");
+            return selected;
+        }
+        public String TagName()
+        {
+            String TagName = webElement.TagName;
+            logger.Here().Information($"TagName of the Element '{locator.Xpath}' is '{TagName}'");
+            return TagName;
+        }
+        
+        public String Text()
+        {
+            String text = webElement.Text;
+            logger.Here().Information($"Text retrieved from the Element '{locator.Xpath}' is '{text}'");
+            return text;
+        }
+
+        public void ClickJS()
+        {
+            executor.ExecuteScript("arguments[0].click();", webElement);
+            logger.Here().Information($"Clicked Element '{locator.Xpath}' using JavaScript");
         }
     }
 }
