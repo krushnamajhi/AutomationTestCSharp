@@ -12,6 +12,11 @@ namespace AutomationTest.uiautomation
         public By By { get; internal set; }
         public String Xpath { get; internal set; }
 
+        internal Locator()
+        {
+
+        }
+
         public static Locator Id(String locator)
         {
             return new Locator() { By = By.Id(locator), Xpath = $"//*[@id=\"{locator}\"]" };
@@ -46,6 +51,10 @@ namespace AutomationTest.uiautomation
         public static Locator Text(String locator)
         {
             return new Locator() { By = By.XPath($"//*[text()=\"{locator}\"]"), Xpath = $"//*[text()=\"{locator}\"]" };
+        } 
+        public static Locator PartialText(String locator)
+        {
+            return new Locator() { By = By.XPath($"//*[contains(text(),\"{locator}\")]"), Xpath = $"//*[contains(text(),\"{locator}\")]" };
         }
     }
 }

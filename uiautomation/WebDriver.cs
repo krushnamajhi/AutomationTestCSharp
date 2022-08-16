@@ -12,6 +12,8 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Text.Json;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace AutomationTest.uiautomation
@@ -228,6 +230,77 @@ namespace AutomationTest.uiautomation
                 navigation.Refresh();   
             }
 
+        }
+
+        public void SetImplicitWait(double seconds)
+        {
+            SeleniumDriver.Manage().Timeouts().ImplicitWait = TimeSpan.FromSeconds(seconds);
+        }
+
+        public void SetPageLoadTimeOut(double seconds)
+        {
+            SeleniumDriver.Manage().Timeouts().PageLoad = TimeSpan.FromSeconds(seconds);
+        }
+        public IWindow CurrentWindow => SeleniumDriver.Manage().Window;
+
+        public void WaitOnCondition(Object data, WaitConditions conditions, bool conditionState, int timeOut = 20)
+        {
+            Wait = new WebDriverWait(SeleniumDriver, TimeSpan.FromSeconds(timeOut));
+
+            switch (conditions)
+            {
+                case WaitConditions.TextPresent:
+                    logger.Here().Information($"Waiting for condtion({nameof(WaitConditions.TextPresent)} {data}) to be {conditionState}, for {timeOut} seconds");
+                    if (conditionState)
+                    {
+                        Wait.Until(ExpectedConditions.ElementIsVisible(Locator.PartialText((string)data).By));
+                    }
+                    else
+                    {
+                        Wait.Until(ExpectedConditions.InvisibilityOfElementLocated(Locator.PartialText((string)data).By));
+                    }
+                    break;
+                case WaitConditions.ElementPresent:
+                    if (data.GetType() == typeof(Locator))
+                    {
+                        logger.Here().Information($"Waiting for condtion({nameof(WaitConditions.ElementPresent)} {((Locator)data).By}) to be {conditionState}, for {timeOut} seconds");
+                        Wait.Until((d) =>
+                        {
+                            bool isPresent = d.FindElements(((Locator)data).By).Count != 0;
+                            return isPresent == conditionState;
+                        });
+                    }
+                    else if (data.GetType() == typeof(WebElement))
+                    {
+                        Wait.Until((d) =>
+                        {
+                            var element = ((WebElement)data).webElement;
+                            bool isPresent = element != null && element.Displayed;
+                            return isPresent == conditionState;
+                        });
+                    }
+                    break;
+                case WaitConditions.ElementDisplayed:
+                    logger.Here().Information($"Waiting for condtion({WaitConditions.ElementDisplayed} [Element : {((WebElement)data).locator.By}]) to be {conditionState}, for {timeOut} seconds");
+                    if (conditionState)
+                    {
+                        Wait.Until(ExpectedConditions.ElementIsVisible(((Locator)data).By));
+                    }
+                    else
+                    {
+                        Wait.Until(ExpectedConditions.InvisibilityOfElementLocated(((Locator)data).By));
+                    }
+                    break;
+                default:
+                    break;
+            }
+
+        }
+
+        public void Pause(int Milliseconds)
+        {
+            logger.Here().Information($"Pausing Execution for {Milliseconds} milliseconds");
+            Thread.Sleep(Milliseconds);
         }
     }
 }
