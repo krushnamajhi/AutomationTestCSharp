@@ -1,4 +1,6 @@
-﻿using AutomationTest.reporting.serilog;
+﻿using AutomationTest.exceptions;
+using AutomationTest.reporting.serilog;
+using AventStack.ExtentReports;
 using NUnit.Framework;
 using OpenQA.Selenium;
 using Serilog;
@@ -16,6 +18,7 @@ namespace AutomationTest.uiautomation
         internal Locator locator;
         protected ILogger logger = LoggerConfig.Logger;
         internal IJavaScriptExecutor executor;
+        internal ExtentTest ExtentTest;
 
         internal WebElement()
         {
@@ -24,16 +27,30 @@ namespace AutomationTest.uiautomation
 
         public WebElement SendKeys(String text)
         {
-            logger.Here().Information($"Entering text '{text}' in element : '{locator.Xpath}'");
-            webElement.SendKeys(text);
-            return this;
+            try
+            {
+                logger.Here().Information($"Entering text '{text}' in element : '{locator.Xpath}'");
+                webElement.SendKeys(text);
+                return this;
+            }
+            catch(Exception e)
+            {
+                throw new TestCaseException($"Unable to Enter Text in the field {locator.Xpath}", e, ExtentTest);
+            }
         }
 
         public WebElement PressKey(String key)
         {
-            logger.Here().Information($"Pressing Key '{key}' in element : '{locator.Xpath}'");
-            webElement.SendKeys(key);
-            return this;
+            try
+            {
+                logger.Here().Information($"Pressing Key '{key}' in element : '{locator.Xpath}'");
+                webElement.SendKeys(key);
+                return this;
+            }
+            catch(Exception e)
+            {
+                throw new TestCaseException($"Unable to Press key on the field {locator.Xpath}", e, ExtentTest);
+            }
         }
         public WebElement EnterText(String text, bool clearBefore = true)
         {
@@ -59,7 +76,9 @@ namespace AutomationTest.uiautomation
                 {
                     Xpath = this.locator.Xpath + locator.Xpath,
                     By = locator.By
-                }
+                },
+                executor = executor,
+                ExtentTest = ExtentTest
             };
         }
 
@@ -112,8 +131,15 @@ namespace AutomationTest.uiautomation
 
         public void ClickJS()
         {
-            executor.ExecuteScript("arguments[0].click();", webElement);
-            logger.Here().Information($"Clicked Element '{locator.Xpath}' using JavaScript");
+            try
+            {
+                executor.ExecuteScript("arguments[0].click();", webElement);
+                logger.Here().Information($"Clicked Element '{locator.Xpath}' using JavaScript");
+            }
+            catch(Exception e)
+            {
+                new TestCaseException($"Failed to Click element '{locator.Xpath}' from javascript",e, ExtentTest);
+            }
         }
     }
 }

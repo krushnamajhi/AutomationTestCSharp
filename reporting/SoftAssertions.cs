@@ -1,8 +1,12 @@
 ﻿using AutomationTest.commonutils;
+using AutomationTest.exceptions;
 using AutomationTest.reporting.serilog;
 using AventStack.ExtentReports;
 using FluentAssertions;
+using NUnit.Framework;
+using NUnit.Framework.Interfaces;
 using Serilog;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.Json;
@@ -43,11 +47,12 @@ namespace AutomationTest.reporting
             failed.Should().BeEmpty();
         }
 
-        private class SingleAssert
+        class SingleAssert
         {
             private readonly string _message;
             private readonly string _expected;
             private readonly string _actual;
+            public readonly TestCaseException _exception;
 
             public bool Failed { get; }
 
@@ -57,23 +62,26 @@ namespace AutomationTest.reporting
                 _expected = expected;
                 _actual = actual;
                 Failed = _expected != _actual;
-                if (Failed)
+
+                try
                 {
+                    Failed.Should().BeFalse();
+                    TestPackage.ExtentTest.Log(Status.Pass, message + " => " + expected);
+                    LoggerConfig.Logger.Here().Information(message);
+                }
+                catch (Exception e)
+                {
+                    TestContext.CurrentContext.Result.Assertions.Append(new AssertionResult(AssertionStatus.Failed, message, Environment.StackTrace));
                     if (TestPackage.Driver.SeleniumDriver != null)
                     {
                         ImageUtil imageUtil = new();
-                        TestPackage.ExtentTest.Log(Status.Warning, this.ToString(),imageUtil.getImageMedia(TestPackage.Driver.GetScreenshotPath()));
+                        TestPackage.ExtentTest.Log(Status.Fail, this.ToString(), imageUtil.getImageMedia(TestPackage.Driver.GetScreenshotPath()));
                     }
                     else
                     {
-                        TestPackage.ExtentTest.Log(Status.Warning, this.ToString());
+                        TestPackage.ExtentTest.Log(Status.Fail, this.ToString());
                     }
-                    LoggerConfig.Logger.Here().Error(this.ToString());
-                }
-                else
-                {
-                    TestPackage.ExtentTest.Log(Status.Pass, message + " => " + expected);
-                    LoggerConfig.Logger.Here().Information(message);
+                    _exception = new TestCaseException("Assertion Error => " + this.ToString(), e, TestPackage.ExtentTest);
                 }
             }
 

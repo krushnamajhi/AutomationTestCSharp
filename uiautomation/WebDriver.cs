@@ -1,4 +1,5 @@
 ﻿using AutomationTest.commonutils;
+using AutomationTest.exceptions;
 using AutomationTest.reporting;
 using AutomationTest.reporting.serilog;
 using AventStack.ExtentReports;
@@ -18,7 +19,7 @@ using System.Threading.Tasks;
 
 namespace AutomationTest.uiautomation
 {
-    
+
     public class WebDriver
     {
         public IWebDriver SeleniumDriver;
@@ -39,41 +40,63 @@ namespace AutomationTest.uiautomation
 
         public WebElement FindElement(Locator locator)
         {
-            logger.Here().Information("Finding element: " + locator.Xpath);
-            return new WebElement() { webElement = SeleniumDriver.FindElement(locator.By), locator = locator, executor = JSRunner };
+            try
+            {
+                logger.Here().Information("Finding element: " + locator.Xpath);
+                return new WebElement() { webElement = SeleniumDriver.FindElement(locator.By), locator = locator, executor = JSRunner, ExtentTest = ExtentTest };
+            }
+            catch (Exception e)
+            {
+                throw new TestCaseException("Unable to Find Element having locator: " + locator.Xpath, e, ExtentTest);
+            }
         }
 
         public List<WebElement> FindElements(Locator locator)
         {
-            logger.Here().Information("Finding all elements: " + locator.Xpath);
-            var webElements = SeleniumDriver.FindElements(locator.By);
-            List<WebElement> result = new();
-            int count = 1;
-            foreach(var element in webElements)
+            try
             {
-                result.Add(new WebElement()
+                logger.Here().Information("Finding all elements: " + locator.Xpath);
+                var webElements = SeleniumDriver.FindElements(locator.By);
+                List<WebElement> result = new();
+                int count = 1;
+                foreach (var element in webElements)
                 {
-                    webElement = element,
-                    locator = new Locator() 
-                    { 
-                        By = locator.By, 
-                        Xpath = $"({locator.Xpath})[{count}]", 
-                    },
-                    executor = JSRunner
-                });
-                count++;
+                    result.Add(new WebElement()
+                    {
+                        webElement = element,
+                        locator = new Locator()
+                        {
+                            By = locator.By,
+                            Xpath = $"({locator.Xpath})[{count}]",
+                        },
+                        executor = JSRunner,
+                        ExtentTest = ExtentTest
+                    });
+                    count++;
+                }
+                return result;
             }
-            return result;
+            catch (Exception e)
+            {
+                throw new TestCaseException("Unable to Find Element having locator: " + locator.Xpath, e, ExtentTest);
+            }
         }
 
         public void Navigate(String url)
         {
-            if(SeleniumDriver == null)
+            if (SeleniumDriver == null)
             {
                 SeleniumDriver = OpenBrowser();
             }
-            ExtentTest.Log(Status.Info, "Navigating to Url: " + url);
-            SeleniumDriver.Navigate().GoToUrl(url);
+            try
+            {
+                ExtentTest.Log(Status.Info, "Navigating to Url: " + url);
+                SeleniumDriver.Navigate().GoToUrl(url);
+            }
+            catch (Exception e)
+            {
+                throw new TestCaseException("Unable to Navigate to the Url: " + url, e, ExtentTest);
+            }
         }
 
         private IWebDriver OpenBrowser()
@@ -112,23 +135,37 @@ namespace AutomationTest.uiautomation
                     driver.Manage().Window.Maximize();
                     return driver;
             }
-            throw new Exception("Browser not supported: " + BrowserType);
+            throw new TestCaseException("Browser not supported: " + BrowserType, new Exception(), ExtentTest);
         }
 
         public void Quit()
         {
-            if(SeleniumDriver != null)
+            try
             {
-                logger.Here().Information("Quiting Driver");
-                SeleniumDriver.Quit();
+                if (SeleniumDriver != null)
+                {
+                    logger.Here().Information("Quiting Driver");
+                    SeleniumDriver.Quit();
+                }
+            }
+            catch (Exception e)
+            {
+                throw new TestCaseException("Unable to Quit Driver", e, ExtentTest);
             }
         }
 
         public Object ExecuteJavaScript(String script)
         {
-            var results = JSRunner.ExecuteScript(script);
-            logger.Here().Information($"Executed Javascript: '{script}'" );
-            return results;
+            try
+            {
+                var results = JSRunner.ExecuteScript(script);
+                logger.Here().Information($"Executed Javascript: '{script}'");
+                return results;
+            }
+            catch(Exception e)
+            {
+                throw new TestCaseException("Unable to execution the javascript: " + script, e, ExtentTest);
+            }
         }
 
         public String GetScreenshotPath(bool TakeFullScreenshot = false, String ImageFormat = "png", String ScreenshotType = "")
@@ -148,7 +185,7 @@ namespace AutomationTest.uiautomation
             }
             catch (Exception ex)
             {
-                Console.WriteLine(ex);
+                logger.Here().Information(ex.ToString() + ex.StackTrace);
                 return "";
             }
         }
@@ -201,14 +238,15 @@ namespace AutomationTest.uiautomation
             SeleniumDriver.Close();
         }
 
-        public class Navigation {
+        public class Navigation
+        {
 
             protected ILogger logger = LoggerConfig.Logger;
 
             private INavigation navigation;
             private String Url;
 
-            internal Navigation (INavigation navigation, String Url)
+            internal Navigation(INavigation navigation, String Url)
             {
                 this.navigation = navigation;
                 this.Url = Url;
@@ -216,18 +254,18 @@ namespace AutomationTest.uiautomation
             public void Back()
             {
                 logger.Here().Information($"Navigating Back from '{Url}'");
-                navigation.Back();   
-            } 
+                navigation.Back();
+            }
             public void Forward()
             {
                 logger.Here().Information($"Navigating Forward from '{Url}'");
-                navigation.Forward();   
+                navigation.Forward();
             }
-            
+
             public void Reload()
             {
                 logger.Here().Information($"Reloading page '{Url}'");
-                navigation.Refresh();   
+                navigation.Refresh();
             }
 
         }
@@ -243,58 +281,63 @@ namespace AutomationTest.uiautomation
         }
         public IWindow CurrentWindow => SeleniumDriver.Manage().Window;
 
-        public void WaitOnCondition(Object data, WaitConditions conditions, bool conditionState, int timeOut = 20)
+        public void WaitOnCondition(Object data, WaitConditions condition, bool conditionState, int timeOut = 20)
         {
-            Wait = new WebDriverWait(SeleniumDriver, TimeSpan.FromSeconds(timeOut));
-
-            switch (conditions)
+            try
             {
-                case WaitConditions.TextPresent:
-                    logger.Here().Information($"Waiting for condtion({nameof(WaitConditions.TextPresent)} {data}) to be {conditionState}, for {timeOut} seconds");
-                    if (conditionState)
-                    {
-                        Wait.Until(ExpectedConditions.ElementIsVisible(Locator.PartialText((string)data).By));
-                    }
-                    else
-                    {
-                        Wait.Until(ExpectedConditions.InvisibilityOfElementLocated(Locator.PartialText((string)data).By));
-                    }
-                    break;
-                case WaitConditions.ElementPresent:
-                    if (data.GetType() == typeof(Locator))
-                    {
-                        logger.Here().Information($"Waiting for condtion({nameof(WaitConditions.ElementPresent)} {((Locator)data).By}) to be {conditionState}, for {timeOut} seconds");
-                        Wait.Until((d) =>
+                Wait = new WebDriverWait(SeleniumDriver, TimeSpan.FromSeconds(timeOut));
+                switch (condition)
+                {
+                    case WaitConditions.TextPresent:
+                        logger.Here().Information($"Waiting for condtion({nameof(WaitConditions.TextPresent)} {data}) to be {conditionState}, for {timeOut} seconds");
+                        if (conditionState)
                         {
-                            bool isPresent = d.FindElements(((Locator)data).By).Count != 0;
-                            return isPresent == conditionState;
-                        });
-                    }
-                    else if (data.GetType() == typeof(WebElement))
-                    {
-                        Wait.Until((d) =>
+                            Wait.Until(ExpectedConditions.ElementIsVisible(Locator.PartialText((string)data).By));
+                        }
+                        else
                         {
-                            var element = ((WebElement)data).webElement;
-                            bool isPresent = element != null && element.Displayed;
-                            return isPresent == conditionState;
-                        });
-                    }
-                    break;
-                case WaitConditions.ElementDisplayed:
-                    logger.Here().Information($"Waiting for condtion({WaitConditions.ElementDisplayed} [Element : {((WebElement)data).locator.By}]) to be {conditionState}, for {timeOut} seconds");
-                    if (conditionState)
-                    {
-                        Wait.Until(ExpectedConditions.ElementIsVisible(((Locator)data).By));
-                    }
-                    else
-                    {
-                        Wait.Until(ExpectedConditions.InvisibilityOfElementLocated(((Locator)data).By));
-                    }
-                    break;
-                default:
-                    break;
+                            Wait.Until(ExpectedConditions.InvisibilityOfElementLocated(Locator.PartialText((string)data).By));
+                        }
+                        break;
+                    case WaitConditions.ElementPresent:
+                        if (data.GetType() == typeof(Locator))
+                        {
+                            logger.Here().Information($"Waiting for condtion({nameof(WaitConditions.ElementPresent)} {((Locator)data).By}) to be {conditionState}, for {timeOut} seconds");
+                            Wait.Until((d) =>
+                            {
+                                bool isPresent = d.FindElements(((Locator)data).By).Count != 0;
+                                return isPresent == conditionState;
+                            });
+                        }
+                        else if (data.GetType() == typeof(WebElement))
+                        {
+                            Wait.Until((d) =>
+                            {
+                                var element = ((WebElement)data).webElement;
+                                bool isPresent = element != null && element.Displayed;
+                                return isPresent == conditionState;
+                            });
+                        }
+                        break;
+                    case WaitConditions.ElementDisplayed:
+                        logger.Here().Information($"Waiting for condtion({WaitConditions.ElementDisplayed} [Element : {((WebElement)data).locator.By}]) to be {conditionState}, for {timeOut} seconds");
+                        if (conditionState)
+                        {
+                            Wait.Until(ExpectedConditions.ElementIsVisible(((Locator)data).By));
+                        }
+                        else
+                        {
+                            Wait.Until(ExpectedConditions.InvisibilityOfElementLocated(((Locator)data).By));
+                        }
+                        break;
+                    default:
+                        break;
+                }
             }
-
+            catch (Exception e)
+            {
+                throw new TestCaseException(e.Message, e, ExtentTest);
+            }
         }
 
         public void Pause(int Milliseconds)
